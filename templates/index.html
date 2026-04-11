@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExamScore - Economics Tutor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f6fa;
+      color: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    header h1 span {
+      color: #4f6ef7;
+    }
+
+    header p {
+      margin-top: 6px;
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 28px;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    #question {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #question:focus {
+      border-color: #4f6ef7;
+    }
+
+    #ask-btn {
+      padding: 12px 22px;
+      background: #4f6ef7;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    #ask-btn:hover { background: #3b57e0; }
+    #ask-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    #result {
+      margin-top: 28px;
+      display: none;
+    }
+
+    .result-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    #answer-text {
+      font-size: 0.97rem;
+      line-height: 1.7;
+      color: #1a1a2e;
+      white-space: pre-wrap;
+    }
+
+    #sources {
+      margin-top: 18px;
+      padding: 10px 14px;
+      background: #f0f4ff;
+      border-left: 3px solid #4f6ef7;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.88rem;
+      color: #4f6ef7;
+    }
+
+    #error-msg {
+      margin-top: 16px;
+      padding: 10px 14px;
+      background: #fff1f2;
+      border-left: 3px solid #e53e3e;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.9rem;
+      color: #c53030;
+      display: none;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.5);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>ExamScore <span>Economics Tutor</span></h1>
+    <p>Ask any question — answers come directly from your textbook.</p>
+  </header>
+
+  <div class="card">
+    <div class="input-row">
+      <input
+        id="question"
+        type="text"
+        placeholder="e.g. What is price elasticity of demand?"
+        autocomplete="off"
+      />
+      <button id="ask-btn" onclick="askQuestion()">Ask</button>
+    </div>
+
+    <div id="error-msg"></div>
+
+    <div id="result">
+      <div class="result-label">Answer</div>
+      <div id="answer-text"></div>
+      <div id="sources"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("question").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") askQuestion();
+    });
+
+    async function askQuestion() {
+      const input = document.getElementById("question");
+      const btn = document.getElementById("ask-btn");
+      const result = document.getElementById("result");
+      const answerText = document.getElementById("answer-text");
+      const sources = document.getElementById("sources");
+      const errorMsg = document.getElementById("error-msg");
+
+      const question = input.value.trim();
+      if (!question) return;
+
+      // Reset UI
+      result.style.display = "none";
+      errorMsg.style.display = "none";
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Thinking...';
+
+      try {
+        const res = await fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question }),
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          errorMsg.textContent = data.error;
+          errorMsg.style.display = "block";
+        } else {
+          answerText.textContent = data.answer;
+          sources.textContent = data.pages.length
+            ? "Sources: Pages " + data.pages.join(", ")
+            : "No source pages found.";
+          result.style.display = "block";
+        }
+      } catch (err) {
+        errorMsg.textContent = "Something went wrong. Is the server running?";
+        errorMsg.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "Ask";
+      }
+    }
+  </script>
+
+</body>
+</html>
