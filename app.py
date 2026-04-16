@@ -1,4 +1,5 @@
 import os
+import markdown
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from query import ask_question
@@ -22,6 +23,7 @@ def ask():
 
     try:
         result = ask_question(question)
+        result["answer"] = markdown.markdown(result["answer"])
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -101,7 +101,28 @@
       font-size: 0.97rem;
       line-height: 1.7;
       color: #1a1a2e;
-      white-space: pre-wrap;
+    }
+
+    #answer-text h1, #answer-text h2, #answer-text h3 {
+      margin: 1rem 0 0.4rem;
+      font-weight: 700;
+    }
+
+    #answer-text p { margin: 0.5rem 0; }
+
+    #answer-text ul, #answer-text ol {
+      padding-left: 1.4rem;
+      margin: 0.4rem 0;
+    }
+
+    #answer-text li { margin: 0.2rem 0; }
+
+    #answer-text strong { font-weight: 700; color: #1a1a2e; }
+
+    #answer-text hr {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 1rem 0;
     }
 
     #sources {
@@ -202,7 +223,7 @@
           errorMsg.textContent = data.error;
           errorMsg.style.display = "block";
         } else {
-          answerText.textContent = data.answer;
+          answerText.innerHTML = data.answer;
           sources.textContent = data.pages.length
             ? "Sources: Pages " + data.pages.join(", ")
             : "No source pages found.";
